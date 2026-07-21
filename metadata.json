@@ -1,0 +1,6 @@
+{
+  "name": "Shri Madbhagavad Gita",
+  "description": "Experience the divine wisdom of the 18 chapters of Bhagavad Gita through simple engaging storytelling, spoken audio, artistic Kurukshetra battlefield illustrations, and interactive guidance from Lord Krishna.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
