@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { gitaChapters, Chapter } from "./gitaData";
+import { gitaChaptersHindi } from "./gitaDataHindi";
 import { BattlefieldTheater } from "./components/BattlefieldTheater";
 import { DivineAdvisor } from "./components/DivineAdvisor";
 import {
@@ -29,6 +30,7 @@ export default function App() {
   const [selectedIdx, setSelectedIdx] = useState<number>(1); // Default to Chapter 2: Sankhya Yoga (wisdom start)
   const [activeTab, setActiveTab] = useState<"wisdom" | "verses" | "dialogue">("wisdom");
   const [searchQuery, setSearchQuery] = useState("");
+  const [language, setLanguage] = useState<"en" | "hi">("en");
 
   // Audio / Speech state for Chapter Storytelling Narrative
   const [isPlaying, setIsPlaying] = useState(false);
@@ -37,7 +39,10 @@ export default function App() {
   const [currentSentence, setCurrentSentence] = useState("");
   const [progress, setProgress] = useState(0);
 
-  const activeChapter = gitaChapters[selectedIdx];
+  const activeChapter = language === "hi"
+    ? { ...gitaChaptersHindi[selectedIdx], visualTheme: gitaChapters[selectedIdx].visualTheme }
+    : gitaChapters[selectedIdx];
+
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   // Split narrative into sentences for real-time highlighting
@@ -47,6 +52,29 @@ export default function App() {
 
   // Keep track of characters mapping
   const sentenceRanges = useRef<{ start: number; end: number; text: string }[]>([]);
+
+  // Localized Labels
+  const t = {
+    title: language === "hi" ? "गीता संदेश" : "Gita Sandesh",
+    subtitle: language === "hi" ? "दिव्य कथा-वाचन एवं आध्यात्मिक मार्गदर्शक" : "Divine Audio-Storytelling & Spiritual Advisor",
+    chaptersHeader: language === "hi" ? "१८ दिव्य अध्याय" : "18 Divine Chapters",
+    plains: language === "hi" ? "कुरुक्षेत्र मैदान" : "Kurukshetra Plains",
+    searchPlaceholder: language === "hi" ? "अध्याय, कर्म, ज्ञान खोजें..." : "Search Karma, Wisdom, Chapter...",
+    noChapters: language === "hi" ? "कोई आध्यात्मिक अध्याय नहीं मिला।" : "No matching spiritual chapters found.",
+    tabWisdom: language === "hi" ? "अध्याय का ज्ञान और शिक्षाएँ" : "Chapter Wisdom & Lessons",
+    tabVerses: language === "hi" ? "विशेष श्लोक (Shloka)" : "Featured Verses (Shloka)",
+    tabDialogue: language === "hi" ? "श्री कृष्ण से पूछें" : "Ask Lord Krishna",
+    sacredNarrative: language === "hi" ? "पवित्र कथा उपदेश" : "Sacred Narrative Discourses",
+    modernLifeTranslate: language === "hi" ? "आधुनिक जीवन में इसका महत्व" : "How It Translates to Modern Life",
+    featuredTeaching: language === "hi" ? "विशेष उपदेश" : "Featured Teaching",
+    gitaVerse: language === "hi" ? "गीता श्लोक" : "Gita Verse",
+    explorer: language === "hi" ? "श्लोक अन्वेषक" : "Shloka Explorer",
+    translation: language === "hi" ? "अनुवाद" : "Translation",
+    context: language === "hi" ? "आध्‍यात्‍मिक संदर्भ" : "Spiritual Context",
+    footerText: language === "hi"
+      ? "श्रीमद्भगवद्गीता का ज्ञान शाश्वत है। शांति से जिएं, अपना कर्तव्य निभाएं, प्रेम में समर्पित रहें।"
+      : "SHRI MADBHAGAVAD GITA wisdom is timeless. Live in peace, perform your duty, surrendered in love.",
+  };
 
   useEffect(() => {
     // Build character ranges for the current chapter's sentences
@@ -58,11 +86,11 @@ export default function App() {
       return { start, end, text: s.trim() };
     });
 
-    // Reset speech states on chapter change
+    // Reset speech states on chapter or language change
     stopNarration();
     setCurrentSentence(sentences[0]?.trim() || "");
     setProgress(0);
-  }, [selectedIdx]);
+  }, [selectedIdx, language]);
 
   // Handle Speech boundary event to highlight sentences
   const handleBoundary = (event: SpeechSynthesisEvent) => {
@@ -108,14 +136,16 @@ export default function App() {
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.rate = playbackRate;
     utterance.volume = isMuted ? 0 : 1;
+    utterance.lang = language === "hi" ? "hi-IN" : "en-US";
 
     // Find custom serene storytelling voice
     const voices = window.speechSynthesis.getVoices();
+    const langPrefix = language === "hi" ? "hi" : "en";
     const desiredVoice = voices.find(
       (v) =>
-        v.name.includes("Google US English") ||
-        v.name.includes("Natural") ||
-        v.lang.startsWith("en")
+        v.lang.startsWith(langPrefix) ||
+        (language === "hi" && v.name.includes("Hindi")) ||
+        (language === "en" && (v.name.includes("Google US English") || v.name.includes("Natural")))
     );
     if (desiredVoice) utterance.voice = desiredVoice;
 
@@ -148,15 +178,14 @@ export default function App() {
     const nextMuted = !isMuted;
     setIsMuted(nextMuted);
     if (utteranceRef.current) {
-      // Chrome/Safari requires re-speaking or updating live volume property
       if (window.speechSynthesis.speaking) {
-        // Simple client-side toggle
         window.speechSynthesis.cancel();
         setIsPlaying(false);
         setTimeout(() => {
           const utterance = new SpeechSynthesisUtterance(activeChapter.narrativeSummary);
           utterance.rate = playbackRate;
           utterance.volume = nextMuted ? 0 : 1;
+          utterance.lang = language === "hi" ? "hi-IN" : "en-US";
           utterance.onboundary = handleBoundary;
           utterance.onend = () => setIsPlaying(false);
           utteranceRef.current = utterance;
@@ -170,13 +199,13 @@ export default function App() {
   const handleRateChange = (rate: number) => {
     setPlaybackRate(rate);
     if (window.speechSynthesis.speaking) {
-      // Re-trigger with new rate seamlessly
       window.speechSynthesis.cancel();
       setIsPlaying(false);
       setTimeout(() => {
         const utterance = new SpeechSynthesisUtterance(activeChapter.narrativeSummary);
         utterance.rate = rate;
         utterance.volume = isMuted ? 0 : 1;
+        utterance.lang = language === "hi" ? "hi-IN" : "en-US";
         utterance.onboundary = handleBoundary;
         utterance.onend = () => setIsPlaying(false);
         utteranceRef.current = utterance;
@@ -194,11 +223,13 @@ export default function App() {
   }, []);
 
   // Filter Chapters based on Search
-  const filteredChapters = gitaChapters.filter((chap) => {
+  const currentChaptersDataset = language === "hi" ? gitaChaptersHindi : gitaChapters;
+  const filteredChapters = currentChaptersDataset.filter((chap) => {
     const q = searchQuery.toLowerCase();
+    const title = "englishTitle" in chap ? chap.englishTitle : chap.hindiTitle;
     return (
       chap.sanskritName.toLowerCase().includes(q) ||
-      chap.englishTitle.toLowerCase().includes(q) ||
+      title.toLowerCase().includes(q) ||
       chap.narrativeSummary.toLowerCase().includes(q) ||
       chap.number.toString().includes(q)
     );
@@ -218,22 +249,40 @@ export default function App() {
               <span className="-rotate-45 font-bold text-lg text-[#d49a3d]">ॐ</span>
             </div>
             <div>
-              <h1 className="text-xl tracking-[0.25em] uppercase font-serif font-light text-[#d49a3d] leading-none">
-                Gita Sandesh
+              <h1 className="text-xl tracking-[0.15em] uppercase font-serif font-light text-[#d49a3d] leading-none">
+                {t.title}
               </h1>
               <span className="text-[10px] font-mono text-[#e8dcc4]/50 font-semibold uppercase tracking-widest block mt-1.5">
-                Divine Audio-Storytelling & Spiritual Advisor
+                {t.subtitle}
               </span>
             </div>
           </div>
 
-          <nav className="hidden md:flex gap-8 text-[11px] uppercase tracking-[0.2em] text-[#e8dcc4]/60">
-            <span className="hover:text-[#d49a3d] transition-colors cursor-pointer">Philosophy</span>
-            <span className="hover:text-[#d49a3d] transition-colors cursor-pointer">Glossary</span>
-            <span className="hover:text-[#d49a3d] transition-colors cursor-pointer">Battlefield</span>
-          </nav>
-
           <div className="flex items-center gap-4">
+            {/* Language Switcher */}
+            <div className="flex bg-[#140d0a] border border-[#d49a3d]/30 rounded-xl p-0.5">
+              <button
+                onClick={() => setLanguage("en")}
+                className={`px-3 py-1.5 text-xs rounded-lg font-serif transition-all cursor-pointer font-semibold ${
+                  language === "en"
+                    ? "bg-[#d49a3d] text-[#0f0906] font-bold"
+                    : "text-[#e8dcc4]/50 hover:text-[#e8dcc4]"
+                }`}
+              >
+                English
+              </button>
+              <button
+                onClick={() => setLanguage("hi")}
+                className={`px-3 py-1.5 text-xs rounded-lg font-serif transition-all cursor-pointer font-semibold ${
+                  language === "hi"
+                    ? "bg-[#d49a3d] text-[#0f0906] font-bold"
+                    : "text-[#e8dcc4]/50 hover:text-[#e8dcc4]"
+                }`}
+              >
+                हिन्दी
+              </button>
+            </div>
+
             <div className="relative w-64">
               <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-[#d49a3d]/60 pointer-events-none">
                 <Search size={14} />
@@ -242,7 +291,7 @@ export default function App() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search Karma, Wisdom, Chapter..."
+                placeholder={t.searchPlaceholder}
                 className="w-full bg-[#140d0a] border border-[#d49a3d]/20 rounded-full py-1.5 pl-9 pr-4 text-xs text-[#e8dcc4] placeholder-[#e8dcc4]/30 outline-none focus:border-[#d49a3d]/60 focus:ring-1 focus:ring-[#d49a3d]/15 transition-all font-sans"
               />
             </div>
@@ -258,10 +307,10 @@ export default function App() {
           <div className="flex items-center justify-between mb-4 pb-2 border-b border-[#d49a3d]/10">
             <h3 className="text-xs font-serif text-[#e8dcc4]/60 uppercase tracking-widest flex items-center gap-1.5 font-semibold">
               <Compass size={13} className="text-[#d49a3d]" />
-              18 Divine Chapters ({filteredChapters.length})
+              {t.chaptersHeader} ({filteredChapters.length})
             </h3>
             <span className="text-[10px] font-mono text-[#d49a3d] bg-[#d49a3d]/10 border border-[#d49a3d]/20 px-2.5 py-0.5 rounded">
-              Kurukshetra Plains
+              {t.plains}
             </span>
           </div>
 
@@ -273,7 +322,6 @@ export default function App() {
                 <button
                   key={chap.number}
                   onClick={() => {
-                    // Find actual index in original gitaChapters
                     const originalIdx = gitaChapters.findIndex((c) => c.number === chap.number);
                     setSelectedIdx(originalIdx);
                   }}
@@ -297,7 +345,7 @@ export default function App() {
                         : "bg-transparent text-[#e8dcc4]/50 border-white/10 group-hover:border-[#d49a3d]/40 group-hover:text-[#d49a3d]"
                     }`}
                   >
-                    {chap.number < 10 ? `0${chap.number}` : chap.number}
+                    {language === "hi" ? toDevanagari(chap.number) : (chap.number < 10 ? `0${chap.number}` : chap.number)}
                   </div>
 
                   {/* Chapter descriptions */}
@@ -306,7 +354,7 @@ export default function App() {
                       {chap.sanskritName}
                     </span>
                     <h4 className="text-xs sm:text-sm font-serif font-medium truncate">
-                      {chap.englishTitle}
+                      {"englishTitle" in chap ? (chap as any).englishTitle : (chap as any).hindiTitle}
                     </h4>
                   </div>
 
@@ -322,7 +370,7 @@ export default function App() {
 
             {filteredChapters.length === 0 && (
               <div className="text-center py-10 text-[#e8dcc4]/40 text-xs font-mono bg-[#0f0906]/40 border border-[#d49a3d]/10 rounded-xl">
-                No matching spiritual chapters found.
+                {t.noChapters}
               </div>
             )}
           </div>
@@ -343,8 +391,9 @@ export default function App() {
             onRateChange={handleRateChange}
             currentSentence={currentSentence}
             progress={progress}
-            chapterTitle={activeChapter.englishTitle}
+            chapterTitle={"englishTitle" in activeChapter ? (activeChapter as any).englishTitle : (activeChapter as any).hindiTitle}
             chapterNumber={activeChapter.number}
+            language={language}
           />
 
           {/* B. Navigation Tabs for deep content */}
@@ -359,7 +408,7 @@ export default function App() {
               id="tab-wisdom-btn"
             >
               <Lightbulb size={14} />
-              Chapter Wisdom & Lessons
+              {t.tabWisdom}
             </button>
             <button
               onClick={() => setActiveTab("verses")}
@@ -371,7 +420,7 @@ export default function App() {
               id="tab-verses-btn"
             >
               <BookOpen size={14} />
-              Featured Verses (Shloka)
+              {t.tabVerses}
             </button>
             <button
               onClick={() => setActiveTab("dialogue")}
@@ -383,7 +432,7 @@ export default function App() {
               id="tab-dialogue-btn"
             >
               <MessageSquare size={14} />
-              Ask Lord Krishna
+              {t.tabDialogue}
             </button>
           </div>
 
@@ -401,7 +450,7 @@ export default function App() {
 
                   <h3 className="text-xs font-mono text-[#d49a3d] uppercase tracking-widest mb-3 flex items-center gap-2 font-semibold">
                     <Music size={14} />
-                    Sacred Narrative Discourses
+                    {t.sacredNarrative}
                   </h3>
                   <p className="text-xs sm:text-sm text-[#e8dcc4]/90 leading-relaxed font-serif first-letter:text-4xl first-letter:font-bold first-letter:text-[#d49a3d] first-letter:float-left first-letter:mr-3 first-letter:mt-1">
                     {activeChapter.narrativeSummary}
@@ -412,11 +461,13 @@ export default function App() {
                 <div>
                   <h3 className="text-sm font-serif font-semibold text-[#e8dcc4] mb-3.5 flex items-center gap-2">
                     <Compass className="text-[#d49a3d] w-4 h-4" />
-                    How It Translates to Modern Life
+                    {t.modernLifeTranslate}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {activeChapter.keyLessons.map((lesson, index) => {
-                      const [title, desc] = lesson.split(":");
+                      const parts = lesson.split(":");
+                      const title = parts[0];
+                      const desc = parts.slice(1).join(":");
                       return (
                         <div
                           key={index}
@@ -424,7 +475,7 @@ export default function App() {
                         >
                           <div>
                             <span className="w-6 h-6 rounded-lg bg-[#d49a3d]/10 border border-[#d49a3d]/25 flex items-center justify-center text-[#d49a3d] font-mono text-xs font-bold mb-3">
-                              0{index + 1}
+                              {language === "hi" ? toDevanagari(index + 1) : `0${index + 1}`}
                             </span>
                             <h4 className="text-xs sm:text-sm font-serif font-bold text-[#e8dcc4] mb-1">
                               {title}
@@ -451,13 +502,13 @@ export default function App() {
 
                 <div className="flex items-center justify-between border-b border-[#d49a3d]/10 pb-3">
                   <div>
-                    <span className="text-[10px] font-mono text-[#d49a3d] font-semibold uppercase tracking-wider">Featured Teaching</span>
+                    <span className="text-[10px] font-mono text-[#d49a3d] font-semibold uppercase tracking-wider">{t.featuredTeaching}</span>
                     <h3 className="text-base font-serif font-medium text-[#e8dcc4]">
-                      Gita Verse {activeChapter.featuredShloka.verseRef}
+                      {t.gitaVerse} {activeChapter.featuredShloka.verseRef}
                     </h3>
                   </div>
                   <span className="text-[11px] font-mono text-[#d49a3d] border border-[#d49a3d]/25 bg-[#d49a3d]/10 px-3 py-1 rounded-full uppercase font-semibold">
-                    Shloka Explorer
+                    {t.explorer}
                   </span>
                 </div>
 
@@ -479,9 +530,9 @@ export default function App() {
                   </p>
                 </div>
 
-                {/* English Translation */}
+                {/* English/Hindi Translation */}
                 <div className="bg-[#d49a3d]/5 border-l-4 border-[#d49a3d] p-4 rounded-r-xl">
-                  <span className="text-[10px] font-mono text-[#d49a3d] block mb-1 uppercase tracking-wider font-bold">Translation</span>
+                  <span className="text-[10px] font-mono text-[#d49a3d] block mb-1 uppercase tracking-wider font-bold">{t.translation}</span>
                   <p className="text-xs sm:text-sm font-serif text-[#e8dcc4] leading-relaxed font-medium">
                     "{activeChapter.featuredShloka.translation}"
                   </p>
@@ -489,7 +540,7 @@ export default function App() {
 
                 {/* Explanation */}
                 <div className="bg-[#0f0906]/30 p-4 rounded-xl border border-[#d49a3d]/15">
-                  <span className="text-[10px] font-mono text-[#e8dcc4]/50 block mb-1.5 uppercase tracking-wider">Spiritual Context</span>
+                  <span className="text-[10px] font-mono text-[#e8dcc4]/50 block mb-1.5 uppercase tracking-wider">{t.context}</span>
                   <p className="text-xs sm:text-sm font-sans text-[#e8dcc4]/80 leading-relaxed">
                     {activeChapter.featuredShloka.explanation}
                   </p>
@@ -499,7 +550,10 @@ export default function App() {
 
             {activeTab === "dialogue" && (
               <div className="animate-fadeIn" id="content-dialogue-panel">
-                <DivineAdvisor currentChapterRef={`${activeChapter.number}: ${activeChapter.englishTitle}`} />
+                <DivineAdvisor 
+                  currentChapterRef={language === "hi" ? `${activeChapter.number}: ${(activeChapter as any).hindiTitle}` : `${activeChapter.number}: ${(activeChapter as any).englishTitle}`}
+                  language={language}
+                />
               </div>
             )}
           </div>
@@ -511,7 +565,7 @@ export default function App() {
       {/* 3. Footer */}
       <footer className="mt-auto bg-[#0f0906] border-t border-[#d49a3d]/20 py-6 px-6 text-center" id="main-footer">
         <p className="text-[11px] font-mono text-[#e8dcc4]/40 tracking-widest uppercase">
-          SHRI MADBHAGAVAD GITA wisdom is timeless. Live in peace, perform your duty, surrendered in love.
+          {t.footerText}
         </p>
       </footer>
 

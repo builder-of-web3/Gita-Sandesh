@@ -14,7 +14,17 @@ interface BattlefieldTheaterProps {
   progress: number; // 0 to 100
   chapterTitle: string;
   chapterNumber: number;
+  language?: "en" | "hi";
 }
+
+const devanagariNumeralsLocal = ["०", "१", "२", "३", "४", "५", "६", "७", "८", "९"];
+const toDevanagariLocal = (num: number) => {
+  return num
+    .toString()
+    .split("")
+    .map((digit) => devanagariNumeralsLocal[parseInt(digit)] || digit)
+    .join("");
+};
 
 export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
   theme,
@@ -29,6 +39,7 @@ export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
   progress,
   chapterTitle,
   chapterNumber,
+  language = "en",
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
@@ -513,7 +524,7 @@ export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
       <div className="absolute top-0 left-0 right-0 p-4 bg-gradient-to-b from-[#0f0906]/95 to-transparent flex justify-between items-center z-10 pointer-events-none">
         <div>
           <span className="text-xs font-mono text-[#d49a3d] font-semibold tracking-wider uppercase block">
-            Chapter {chapterNumber < 10 ? `0${chapterNumber}` : chapterNumber}
+            {language === "hi" ? `अध्याय ${toDevanagariLocal(chapterNumber)}` : `Chapter ${chapterNumber < 10 ? `0${chapterNumber}` : chapterNumber}`}
           </span>
           <h2 className="text-lg md:text-xl font-serif text-[#e8dcc4] font-medium tracking-tight">
             {chapterTitle}
@@ -521,7 +532,9 @@ export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
         </div>
         <div className="bg-[#140d0a]/90 border border-[#d49a3d]/30 px-3 py-1 rounded-full text-[10px] font-mono text-[#d49a3d] font-semibold uppercase flex items-center gap-1.5 backdrop-blur-sm shadow-md">
           <span className="w-2 h-2 rounded-full bg-[#d49a3d] animate-pulse" />
-          {isPlaying ? "Divine Narration Playing" : "Wisdom Theater"}
+          {isPlaying 
+            ? (language === "hi" ? "दिव्य कथा-वाचन सक्रिय" : "Divine Narration Playing") 
+            : (language === "hi" ? "ज्ञान थियेटर" : "Wisdom Theater")}
         </div>
       </div>
 
@@ -531,7 +544,7 @@ export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
       {/* 3. Subtitles/Script Overlay below canvas */}
       <div className="absolute bottom-16 left-4 right-4 bg-[#0f0906]/95 backdrop-blur-md border border-[#d49a3d]/20 p-3.5 rounded-xl text-center z-10 transition-all duration-500 max-h-20 overflow-y-auto shadow-lg flex items-center justify-center">
         <p className="text-xs sm:text-sm font-serif text-[#e8dcc4] leading-relaxed font-medium italic">
-          {currentSentence || "Select a chapter or press Play to listen to the divine discourse..."}
+          {currentSentence || (language === "hi" ? "अध्याय चुनें या दिव्य प्रवचन सुनने के लिए प्ले बटन दबाएं..." : "Select a chapter or press Play to listen to the divine discourse...")}
         </p>
       </div>
 
@@ -571,7 +584,9 @@ export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
 
         {/* Speed adjustment */}
         <div className="flex items-center gap-3">
-          <span className="text-[10px] font-mono text-[#e8dcc4]/50 uppercase hidden sm:inline tracking-wider">Narrator Speed</span>
+          <span className="text-[10px] font-mono text-[#e8dcc4]/50 uppercase hidden sm:inline tracking-wider">
+            {language === "hi" ? "वाचन गति" : "Narrator Speed"}
+          </span>
           <div className="flex bg-[#0f0906] p-0.5 rounded-lg border border-[#d49a3d]/10">
             {[0.8, 1.0, 1.2, 1.5].map((rate) => (
               <button
