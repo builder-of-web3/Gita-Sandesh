@@ -139,6 +139,105 @@ Return the response strictly as a JSON object adhering to this schema:
   }
 });
 
+// Verse-by-Verse Explorer endpoint
+app.post("/api/gita/verse", async (req, res) => {
+  const { chapter, verse, language = "en" } = req.body;
+
+  if (!chapter || !verse) {
+    return res.status(400).json({ error: "Chapter and Verse numbers are required." });
+  }
+
+  const isHindi = language === "hi";
+
+  const fallbackResponseEn = {
+    sanskrit: "न हि ज्ञानेन सदृशं पवित्रमिह विद्यते ।\nतत्स्वयं योगसंसिद्धः कालेनात्मनि विन्दति ॥",
+    transliteration: "na hi jñānena sadṛśaṁ pavitram iha vidyate\ntat svayaṁ yoga-saṁsiddhaḥ kālenātmani vindati",
+    wordByWord: "na = never; hi = certainly; jñānena = with knowledge; sadṛśam = comparison; pavitram = pure; iha = in this world; vidyate = exists; tat = that; svayam = oneself; yoga-saṁsiddhaḥ = matured in yoga; kālena = in course of time; ātmani = in the self; vindati = attains.",
+    translation: "In this world, there is nothing so sublime and pure as transcendental knowledge. One who has become accomplished in the practice of yoga realizes this within themselves in due course of time.",
+    explanation: "This classic verse from Chapter 4 reminds us that spiritual knowledge is the ultimate purifier. As you explore the Bhagavad Gita verse by verse, each teaching serves as a guiding light, cleansing your intellect from self-doubt, fear, and attachment. True peace is discovered from within when our minds align with our ultimate duties.",
+    visualCue: "glowing_aura"
+  };
+
+  const fallbackResponseHi = {
+    sanskrit: "न हि ज्ञानेन सदृशं पवित्रमिह विद्यते ।\nतत्स्वयं योगसंसिद्धः कालेनात्मनि विन्दति ॥",
+    transliteration: "na hi jñānena sadṛśaṁ pavitram iha vidyate\ntat svayaṁ yoga-saṁsiddhaḥ kālenātmani vindati",
+    wordByWord: "न = नहीं; हि = निश्चय ही; ज्ञानेन = ज्ञान के; सदृशम् = समान; पवित्रम् = पवित्र करने वाला; इह = इस संसार में; विद्यते = अस्तित्व में है; तत् = उसे; स्वयं = खुद; योग-संसिद्धः = योग में सिद्ध हुआ मनुष्य; कालेन = समय के साथ; आत्मनि = अपनी आत्मा में; विन्दति = प्राप्त करता है।",
+    translation: "इस संसार में ज्ञान के समान पवित्र करने वाला निश्चय ही कुछ भी नहीं है। उस ज्ञान को योग साधना में सिद्ध हुआ मनुष्य समय आने पर अपने आप ही अपने अंतःकरण में अनुभव करता है।",
+    explanation: "अध्याय ४ का यह प्रसिद्ध श्लोक हमें याद दिलाता है कि आध्यात्मिक ज्ञान ही परम पावन करने वाला है। जैसे-जैसे आप भगवद्गीता के श्लोकों का अध्ययन करते हैं, प्रत्येक सीख आत्म-संदेह, भय और आसक्ति के मैल को दूर करने में सहायक सिद्ध होती है। जब मन कर्तव्य पर केंद्रित होता है, तो सच्चा आनंद स्वतः भीतर प्रकट हो जाता है।",
+    visualCue: "glowing_aura"
+  };
+
+  const fallbackResponse = isHindi ? fallbackResponseHi : fallbackResponseEn;
+
+  if (!ai) {
+    return res.json(fallbackResponse);
+  }
+
+  try {
+    const prompt = `You are an elite Sanskrit scholar, indologist, and spiritual mentor.
+Provide a highly authentic, detailed, word-by-word explanation of Chapter ${chapter}, Verse ${verse} of the Shrimad Bhagavad Gita.
+
+CRITICAL INSTRUCTIONS FOR RESPONSE:
+- Find or reconstruct the authentic Sanskrit Shloka text in Devanagari script for Chapter ${chapter}, Verse ${verse}.
+- Provide the precise Roman transliteration.
+- Provide a clear, detailed word-by-word breakdown (showing the Sanskrit word and its corresponding meaning in ${isHindi ? "Hindi" : "English"}). Format it like: "SanskritWord = meaning; SanskritWord2 = meaning2; ..."
+- Translate the verse fully in ${isHindi ? "Hindi" : "English"}.
+- Provide a deep psychological, spiritual, and modern-life translation/explanation in ${isHindi ? "Hindi" : "English"}, split into 2 clear and inspiring paragraphs.
+- Based on the spiritual energy and emotional vibe of this specific verse, output exactly one of these visual cues that matches best:
+  * "grief_storm" (for sad, heavy, anxious, or confused verses)
+  * "divine_dawn" (for wisdom, chariot guidance, or hopeful verses)
+  * "sacred_fire" (for verses on action, duty, energy, or burning karma)
+  * "glowing_aura" (for knowledge, supreme realization, or pure wisdom)
+  * "calm_lotus" (for peace, equanimity, detachment, or meditation)
+  * "cosmic_vortex" (for universal form, infinite time, or divine power)
+  * "golden_victory" (for devotion, absolute faith, liberation, or victory)
+
+Return your response strictly as a JSON object matching this schema:
+{
+  "sanskrit": "The Devanagari Sanskrit verse",
+  "transliteration": "The Roman transliteration of the verse",
+  "wordByWord": "Word1 = Meaning1; Word2 = Meaning2; ...",
+  "translation": "Full translation in ${isHindi ? "Hindi" : "English"}",
+  "explanation": "Spiritual, psychological and modern application in ${isHindi ? "Hindi" : "English"}",
+  "visualCue": "One of the allowed visual cues"
+}`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-3.5-flash",
+      contents: [{ text: prompt }],
+      config: {
+        systemInstruction: isHindi 
+          ? "आप भगवद्गीता के परम ज्ञानी आचार्य हैं। आप संस्कृत श्लोकों का अत्यंत प्रामाणिक, सुंदर और व्यावहारिक जीवन से जुड़ा विश्लेषण प्रदान करते हैं।"
+          : "You are an enlightened Bhagavad Gita scholar who provides highly authentic, beautiful, and practically applicable translations and word-by-word break-downs of Gita verses.",
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            sanskrit: { type: Type.STRING, description: "Authentic Sanskrit Devanagari text" },
+            transliteration: { type: Type.STRING, description: "Sanskrit Roman transliteration" },
+            wordByWord: { type: Type.STRING, description: "Sanskrit words and their meanings" },
+            translation: { type: Type.STRING, description: "Translation of the verse" },
+            explanation: { type: Type.STRING, description: "Spiritual and psychological interpretation" },
+            visualCue: { type: Type.STRING, description: "Visual mood cue for rendering animations" }
+          },
+          required: ["sanskrit", "transliteration", "wordByWord", "translation", "explanation", "visualCue"]
+        }
+      }
+    });
+
+    const text = response.text;
+    if (text) {
+      const result = JSON.parse(text);
+      return res.json(result);
+    } else {
+      return res.json(fallbackResponse);
+    }
+  } catch (error) {
+    console.error("Error generating verse analysis:", error);
+    return res.json(fallbackResponse);
+  }
+});
+
 // Configure Vite middleware in development or serve static build files in production
 async function configureApp() {
   if (process.env.NODE_ENV !== "production") {

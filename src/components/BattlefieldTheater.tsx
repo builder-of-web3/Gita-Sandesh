@@ -15,6 +15,7 @@ interface BattlefieldTheaterProps {
   chapterTitle: string;
   chapterNumber: number;
   language?: "en" | "hi";
+  customVisualCue?: string;
 }
 
 const devanagariNumeralsLocal = ["०", "१", "२", "३", "४", "५", "६", "७", "८", "९"];
@@ -40,6 +41,7 @@ export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
   chapterTitle,
   chapterNumber,
   language = "en",
+  customVisualCue = "",
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
@@ -61,6 +63,8 @@ export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
       }
     };
     window.addEventListener("resize", handleResize);
+
+    const activeVisualMode = customVisualCue || theme;
 
     // Particle class for diverse spiritual animations
     class Particle {
@@ -90,8 +94,14 @@ export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
 
       reset() {
         this.x = Math.random() * width;
-        this.y = theme === "final_liberation" || theme === "glowing_knowledge" ? height + 10 : Math.random() * height;
-        if (theme === "vishwaroopam") {
+        this.y =
+          activeVisualMode === "final_liberation" ||
+          activeVisualMode === "glowing_knowledge" ||
+          activeVisualMode === "glowing_aura" ||
+          activeVisualMode === "golden_victory"
+            ? height + 10
+            : Math.random() * height;
+        if (activeVisualMode === "vishwaroopam" || activeVisualMode === "cosmic_vortex") {
           // Spawn in center for whirlpool effect
           this.x = width / 2 + (Math.random() * 40 - 20);
           this.y = height / 2 + (Math.random() * 40 - 20);
@@ -101,9 +111,9 @@ export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
         this.angle = Math.random() * Math.PI * 2;
       }
 
-      update(theme: string) {
+      update(activeTheme: string) {
         // Theme specific behaviors
-        if (theme === "vishwaroopam") {
+        if (activeTheme === "vishwaroopam" || activeTheme === "cosmic_vortex") {
           // Orbital rotation around center
           const dx = this.x - width / 2;
           const dy = this.y - height / 2;
@@ -112,17 +122,31 @@ export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
           this.x = width / 2 + Math.cos(this.angle) * (dist + 0.2);
           this.y = height / 2 + Math.sin(this.angle) * (dist + 0.2);
           if (dist > width * 0.6) this.reset();
-        } else if (theme === "final_liberation" || theme === "glowing_knowledge" || theme === "bhakti_devotion" || theme === "chariot_wisdom") {
+        } else if (
+          activeTheme === "final_liberation" ||
+          activeTheme === "glowing_knowledge" ||
+          activeTheme === "bhakti_devotion" ||
+          activeTheme === "chariot_wisdom" ||
+          activeTheme === "divine_dawn" ||
+          activeTheme === "glowing_aura" ||
+          activeTheme === "golden_victory"
+        ) {
           // Floating upwards
           this.y -= this.velocity * 1.5;
           this.x += Math.sin(this.angle) * 0.3;
           this.angle += 0.02;
           if (this.y < -10) this.reset();
-        } else if (theme === "battlefield_grief") {
+        } else if (activeTheme === "battlefield_grief" || activeTheme === "grief_storm") {
           // Dust storm moving left to right
           this.x += this.velocity * 1.2;
           this.y += Math.sin(this.angle) * 0.2;
           if (this.x > width + 10) this.reset();
+        } else if (activeTheme === "action_duty" || activeTheme === "sacred_fire") {
+          // Fire rising upwards rapidly
+          this.y -= this.velocity * 2.2;
+          this.x += Math.sin(this.angle) * 0.5;
+          this.angle += 0.04;
+          if (this.y < -10) this.reset();
         } else {
           // Calm drift
           this.x += this.speedX;
@@ -141,7 +165,13 @@ export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
         ctx.fillStyle = this.color;
         ctx.beginPath();
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.shadowBlur = theme === "vishwaroopam" || theme === "glowing_knowledge" ? 10 : 0;
+        ctx.shadowBlur =
+          activeVisualMode === "vishwaroopam" ||
+          activeVisualMode === "cosmic_vortex" ||
+          activeVisualMode === "glowing_knowledge" ||
+          activeVisualMode === "glowing_aura"
+            ? 10
+            : 0;
         ctx.shadowColor = this.color;
         ctx.fill();
         ctx.restore();
@@ -149,7 +179,7 @@ export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
     }
 
     const particles: Particle[] = [];
-    const particleCount = 120;
+    const particleCount = 140; // slightly denser for richer effect
     for (let i = 0; i < particleCount; i++) {
       particles.push(new Particle());
     }
@@ -159,38 +189,43 @@ export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
 
     // Main animation loop
     const render = () => {
-      // 1. Draw Background Gradients based on Chapter Theme
+      // 1. Draw Background Gradients based on Chapter Theme / Custom Cue
       let bgGradient = ctx.createLinearGradient(0, 0, 0, height);
-      switch (theme) {
+      switch (activeVisualMode) {
+        case "grief_storm":
         case "battlefield_grief":
-          // Dusty, heavy bronze-grey sky
-          bgGradient.addColorStop(0, "#1c1917");
-          bgGradient.addColorStop(0.5, "#292524");
-          bgGradient.addColorStop(1, "#1c1917");
+          // Heavy dark crimson, slate ash sky
+          bgGradient.addColorStop(0, "#1a1212");
+          bgGradient.addColorStop(0.5, "#2a1c1c");
+          bgGradient.addColorStop(1, "#140c0c");
           break;
+        case "divine_dawn":
         case "chariot_wisdom":
           // Golden dawn of spiritual teachings
           bgGradient.addColorStop(0, "#1e1b4b");
           bgGradient.addColorStop(0.6, "#78350f");
-          bgGradient.addColorStop(1, "#1e1b4b");
+          bgGradient.addColorStop(1, "#140d0a");
           break;
+        case "sacred_fire":
         case "action_duty":
           // Fire, energy, dynamic action
           bgGradient.addColorStop(0, "#2a0800");
           bgGradient.addColorStop(0.5, "#7c2d12");
           bgGradient.addColorStop(1, "#170500");
           break;
+        case "glowing_aura":
         case "glowing_knowledge":
           // Brilliant white-gold light breaking darkness
           bgGradient.addColorStop(0, "#0c0a09");
           bgGradient.addColorStop(0.5, "#451a03");
-          bgGradient.addColorStop(1, "#0c0a09");
+          bgGradient.addColorStop(1, "#0a0706");
           break;
+        case "calm_lotus":
         case "inner_renunciation":
           // Serene teal water reflection
           bgGradient.addColorStop(0, "#022c22");
           bgGradient.addColorStop(0.7, "#064e3b");
-          bgGradient.addColorStop(1, "#022c22");
+          bgGradient.addColorStop(1, "#021c15");
           break;
         case "meditation_peace":
           // Indigo, spiritual deep focus
@@ -198,6 +233,7 @@ export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
           bgGradient.addColorStop(0.5, "#311042");
           bgGradient.addColorStop(1, "#090514");
           break;
+        case "cosmic_vortex":
         case "vishwaroopam":
           // Infinite cosmic vortex deep purple/navy
           bgGradient.addColorStop(0, "#03001e");
@@ -205,18 +241,14 @@ export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
           bgGradient.addColorStop(1, "#ec38bc");
           bgGradient.addColorStop(1, "#03001e");
           break;
-        case "bhakti_devotion":
-          // Soft pink, golden heart warmth
-          bgGradient.addColorStop(0, "#1e1b4b");
-          bgGradient.addColorStop(0.6, "#4d1d49");
-          bgGradient.addColorStop(1, "#170c1b");
-          break;
+        case "golden_victory":
         case "final_liberation":
+        case "bhakti_devotion":
           // Golden sunrise of absolute victory and peace
           bgGradient.addColorStop(0, "#1c1917");
           bgGradient.addColorStop(0.4, "#f59e0b");
           bgGradient.addColorStop(0.8, "#b45309");
-          bgGradient.addColorStop(1, "#1c1917");
+          bgGradient.addColorStop(1, "#110b07");
           break;
         default:
           bgGradient.addColorStop(0, "#090d16");
@@ -224,60 +256,128 @@ export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
       }
 
       ctx.fillStyle = bgGradient;
+
+      // Subtle screen shake for grief_storm theme for dramatic visual impact
+      if (activeVisualMode === "grief_storm") {
+        ctx.save();
+        const shakeX = Math.sin(waveOffset * 3) * 1.5;
+        const shakeY = Math.cos(waveOffset * 2) * 1.5;
+        ctx.translate(shakeX, shakeY);
+      }
+
       ctx.fillRect(0, 0, width, height);
 
       // 2. Render Cosmic Portal/Emanations in specific themes
-      if (theme === "vishwaroopam") {
+      if (activeVisualMode === "vishwaroopam" || activeVisualMode === "cosmic_vortex") {
         // Draw rotating spiral galaxy behind the silhouette
         ctx.save();
         ctx.translate(width / 2, height / 2);
         ctx.rotate(waveOffset * 0.02);
-        const grad = ctx.createRadialGradient(0, 0, 10, 0, 0, width * 0.4);
+        const grad = ctx.createRadialGradient(0, 0, 10, 0, 0, width * 0.45);
         grad.addColorStop(0, "rgba(255, 255, 255, 0.95)");
-        grad.addColorStop(0.1, "rgba(253, 224, 71, 0.8)");
-        grad.addColorStop(0.3, "rgba(236, 72, 153, 0.4)");
-        grad.addColorStop(0.6, "rgba(147, 51, 234, 0.1)");
+        grad.addColorStop(0.15, "rgba(253, 224, 71, 0.8)");
+        grad.addColorStop(0.4, "rgba(236, 72, 153, 0.45)");
+        grad.addColorStop(0.7, "rgba(147, 51, 234, 0.15)");
         grad.addColorStop(1, "rgba(0, 0, 0, 0)");
         ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.arc(0, 0, width * 0.4, 0, Math.PI * 2);
+        ctx.arc(0, 0, width * 0.45, 0, Math.PI * 2);
         ctx.fill();
         ctx.restore();
-      } else if (theme === "chariot_wisdom" || theme === "glowing_knowledge") {
+      } else if (
+        activeVisualMode === "chariot_wisdom" ||
+        activeVisualMode === "glowing_knowledge" ||
+        activeVisualMode === "divine_dawn" ||
+        activeVisualMode === "glowing_aura"
+      ) {
         // Radiant halo in the center
-        const haloGrad = ctx.createRadialGradient(width / 2, height / 2 - 30, 5, width / 2, height / 2 - 30, 200);
-        haloGrad.addColorStop(0, "rgba(254, 240, 138, 0.8)");
-        haloGrad.addColorStop(0.3, "rgba(217, 119, 6, 0.3)");
+        const haloGrad = ctx.createRadialGradient(width / 2, height / 2 - 30, 5, width / 2, height / 2 - 30, 220);
+        haloGrad.addColorStop(0, "rgba(254, 240, 138, 0.85)");
+        haloGrad.addColorStop(0.4, "rgba(217, 119, 6, 0.35)");
         haloGrad.addColorStop(1, "rgba(0,0,0,0)");
         ctx.fillStyle = haloGrad;
         ctx.beginPath();
-        ctx.arc(width / 2, height / 2 - 30, 200, 0, Math.PI * 2);
+        ctx.arc(width / 2, height / 2 - 30, 220, 0, Math.PI * 2);
         ctx.fill();
       }
 
       // 3. Update & Draw Particles
       particles.forEach((p) => {
         // Adjust particle colors to match theme
-        if (theme === "vishwaroopam") {
+        if (activeVisualMode === "vishwaroopam" || activeVisualMode === "cosmic_vortex") {
           p.color = Math.random() > 0.5 ? "#f472b6" : "#c084fc"; // Pink/Purple cosmic stars
-        } else if (theme === "inner_renunciation") {
+        } else if (activeVisualMode === "inner_renunciation" || activeVisualMode === "calm_lotus") {
           p.color = "#34d399"; // Emerald lotus drops
-        } else if (theme === "action_duty") {
-          p.color = "#f97316"; // Fiery orange spark
-        } else if (theme === "battlefield_grief") {
-          p.color = "#a8a29e"; // Stone dust
+        } else if (activeVisualMode === "action_duty" || activeVisualMode === "sacred_fire") {
+          p.color = Math.random() > 0.4 ? "#f97316" : "#ef4444"; // Fiery orange/red sparks
+        } else if (activeVisualMode === "battlefield_grief" || activeVisualMode === "grief_storm") {
+          p.color = Math.random() > 0.3 ? "#ef4444" : "#78716c"; // Red embers and ash dust
+        } else if (activeVisualMode === "golden_victory") {
+          p.color = "#fef08a"; // Bright gold shining sparkles
         } else {
           p.color = "#fef08a"; // Pure gold light
         }
-        p.update(theme);
+        p.update(activeVisualMode);
         p.draw();
       });
+
+      // Special overlay animations based on customVisualCue
+      if (activeVisualMode === "grief_storm") {
+        // Draw falling rain/ash dashes
+        ctx.save();
+        ctx.strokeStyle = "rgba(239, 68, 68, 0.15)";
+        ctx.lineWidth = 1;
+        for (let r = 0; r < 25; r++) {
+          const rx = (Math.sin(waveOffset + r) * 0.5 + 0.5) * width;
+          const ry = ((waveOffset * 3 + r * 20) % height);
+          ctx.beginPath();
+          ctx.moveTo(rx, ry);
+          ctx.lineTo(rx + 5, ry + 15);
+          ctx.stroke();
+        }
+        ctx.restore();
+      } else if (activeVisualMode === "sacred_fire") {
+        // Pulse background aura
+        ctx.save();
+        const pulse = Math.sin(waveOffset * 1.5) * 0.15 + 0.85;
+        const fireGrad = ctx.createRadialGradient(width / 2, height - 20, 10, width / 2, height - 20, 150 * pulse);
+        fireGrad.addColorStop(0, "rgba(249, 115, 22, 0.4)");
+        fireGrad.addColorStop(0.5, "rgba(239, 68, 68, 0.15)");
+        fireGrad.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = fireGrad;
+        ctx.beginPath();
+        ctx.arc(width / 2, height - 20, 150 * pulse, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      } else if (activeVisualMode === "glowing_aura") {
+        // Expand golden concentric rings representing aura emanations
+        ctx.save();
+        ctx.strokeStyle = "rgba(254, 240, 138, 0.15)";
+        ctx.lineWidth = 1.5;
+        const ringRad = ((waveOffset * 15) % 180) + 20;
+        ctx.beginPath();
+        ctx.arc(width / 2, height / 2 - 30, ringRad, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.restore();
+      } else if (activeVisualMode === "calm_lotus") {
+        // Drifting horizontal ripples
+        ctx.save();
+        ctx.strokeStyle = "rgba(52, 211, 153, 0.25)";
+        ctx.lineWidth = 1;
+        const rippleFactor = Math.sin(waveOffset * 0.5) * 5;
+        for (let l = 1; l <= 2; l++) {
+          ctx.beginPath();
+          ctx.ellipse(width / 2, height - 50, 80 * l + rippleFactor, 15 * l, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
 
       // 4. Render Dynamic SVG Silhouettes (Chariot, Lord Krishna, Arjuna)
       ctx.save();
       ctx.globalAlpha = 0.85;
 
-      if (theme === "vishwaroopam") {
+      if (activeVisualMode === "vishwaroopam" || activeVisualMode === "cosmic_vortex") {
         // Draw majestic cosmic multi-armed deity silhouette in the center
         ctx.fillStyle = "#0c0415";
         ctx.strokeStyle = "rgba(253, 224, 71, 0.6)";
@@ -293,7 +393,7 @@ export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
         for (let i = -4; i <= 4; i++) {
           if (i === 0) continue;
           ctx.save();
-          ctx.rotate((i * Math.PI) / 10);
+          ctx.rotate((i * Math.PI) / 10 + Math.sin(waveOffset * 0.05 + i) * 0.03); // gentle swaying of cosmic arms
           ctx.beginPath();
           // Abstract arm paths
           ctx.ellipse(0, -60, 15, 80, 0.2, 0, Math.PI * 2);
@@ -333,7 +433,7 @@ export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
         ctx.closePath();
         ctx.fill();
 
-      } else if (theme === "inner_renunciation") {
+      } else if (activeVisualMode === "inner_renunciation" || activeVisualMode === "calm_lotus") {
         // Draw Lotus & water ripples
         ctx.translate(width / 2, height / 2 + 40);
         ctx.fillStyle = "#022c22";
@@ -479,6 +579,11 @@ export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
 
       ctx.restore();
 
+      // Shake restorer
+      if (activeVisualMode === "grief_storm") {
+        ctx.restore();
+      }
+
       // 5. Draw Animated Audio Waveform at bottom when playing
       if (isPlaying) {
         ctx.save();
@@ -490,13 +595,19 @@ export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
         // Draw multiple beautiful sine waves overlaying each other
         for (let w = 0; w < 3; w++) {
           ctx.beginPath();
-          ctx.strokeStyle = w === 0 ? "rgba(254, 240, 138, 0.85)" : w === 1 ? "rgba(245, 158, 11, 0.5)" : "rgba(236, 72, 153, 0.3)";
+          ctx.strokeStyle =
+            w === 0
+              ? "rgba(254, 240, 138, 0.85)"
+              : w === 1
+              ? "rgba(245, 158, 11, 0.5)"
+              : "rgba(236, 72, 153, 0.3)";
           ctx.lineWidth = w === 0 ? 3 : 1.5;
           const amp = 15 + w * 10;
           const speed = waveOffset * (1 - w * 0.2);
 
           for (let x = 0; x < width; x++) {
-            const y = height - 50 + Math.sin(x * 0.015 + speed) * amp * Math.sin(x * Math.PI / width);
+            const y =
+              height - 50 + Math.sin(x * 0.015 + speed) * amp * Math.sin((x * Math.PI) / width);
             if (x === 0) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);
           }
@@ -515,7 +626,7 @@ export const BattlefieldTheater: React.FC<BattlefieldTheaterProps> = ({
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       window.removeEventListener("resize", handleResize);
     };
-  }, [theme, isPlaying]);
+  }, [theme, isPlaying, customVisualCue]);
 
   return (
     <div className="relative w-full h-80 sm:h-96 md:h-[450px] bg-[#0f0906] rounded-2xl overflow-hidden border border-[#d49a3d]/25 shadow-2xl shadow-black flex flex-col justify-between" id="battlefield-visualizer-theater">
