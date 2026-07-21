@@ -921,9 +921,12 @@ export default function App() {
       </main>
 
       {/* 3. Footer */}
-      <footer className="mt-auto bg-[#0f0906] border-t border-[#d49a3d]/20 py-6 px-6 text-center" id="main-footer">
+      <footer className="mt-auto bg-[#0f0906] border-t border-[#d49a3d]/20 py-6 px-6 text-center flex flex-col items-center justify-center gap-2" id="main-footer">
         <p className="text-[11px] font-mono text-[#e8dcc4]/40 tracking-widest uppercase">
           {t.footerText}
+        </p>
+        <p className="text-xs font-serif text-[#d49a3d]/80 italic tracking-wider">
+          {language === "hi" ? "सुग्गू के लिए प्रेम में समर्पित" : "Surrendered in love for Suggu"}
         </p>
       </footer>
 
